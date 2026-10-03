@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Macro Economy Solar System & Real-Time Stocks</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #020208;
+            color: #fff;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Sci-Fi Floating UI Elements */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 25px;
+        }
+
+        .header-box {
+            pointer-events: auto;
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+            border-radius: 16px;
+            padding: 18px 25px;
+            max-width: 450px;
+        }
+
+        .header-box h1 {
+            font-size: 1.4rem;
+            color: #38bdf8;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .header-box p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        /* Real-Time Stock Bar */
+        .stock-ticker-bar {
+            pointer-events: auto;
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .stock-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 4px solid #38bdf8;
+            border-radius: 12px;
+            padding: 12px 20px;
+            min-width: 180px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+            border-color: #38bdf8;
+        }
+
+        .stock-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .stock-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 4px 0;
+        }
+
+        .stock-change {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .up { color: #22c55e; }
+        .down { color: #ef4444; }
+
+        /* Modal Box for Planet Details */
+        #modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 480px;
+            background: rgba(10, 15, 30, 0.9);
+            border: 1px solid #38bdf8;
+            box-shadow: 0 0 35px rgba(56, 189, 248, 0.4);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(16px);
+            z-index: 100;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -46%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+
+        #modal h2 {
+            margin-top: 0;
+            color: #f8fafc;
+            font-size: 1.3rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        #modal .category {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        #modal p {
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+
+        .close-btn {
+            margin-top: 20px;
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            transition: 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #7dd3fc;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+        }
+    </style>
+    <!-- Three.js & Controls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer">
+        <!-- Top Title -->
+        <div class="header-box">
+            <h1><span class="live-dot"></span> Macro Solar System</h1>
+            <p>Drag to rotate, scroll to zoom. Click any orbit planet to inspect macro drivers.</p>
+        </div>
+
+        <!-- Bottom Real-Time Stock Cards -->
+        <div class="stock-ticker-bar">
+            <div class="stock-card">
+                <div class="stock-name">VOO (S&P 500 ETF)</div>
+                <div class="stock-price" id="voo-price">Loading...</div>
+                <div class="stock-change" id="voo-change">-</div>
+            </div>
+            <div class="stock-card">
+                <div class="stock-name">NVDA (NVIDIA)</div>
+                <div class="stock-price" id="nvda-price">Loading...</div>
+                <div class="stock-change" id="nvda-change">-</div>
+            </div>
+            <div class="stock-card">
+                <div class="stock-name">AAPL (Apple)</div>
+                <div class="stock-price" id="aapl-price">Loading...</div>
+                <div class="stock-change" id="aapl-change">-</div>
+            </div>
+            <div class="stock-card">
+                <div class="stock-name">MSFT (Microsoft)</div>
+                <div class="stock-price" id="msft-price">Loading...</div>
+                <div class="stock-change" id="msft-change">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Planet Detail Modal -->
+    <div id="modal">
+        <span id="modal-category" class="category"></span>
+        <h2 id="modal-title">Title</h2>
+        <p id="modal-content">Details...</p>
+        <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
+
+    <!-- 3D Orbit Engine -->
+    <script>
+        const marketData = [
+            {
+                id: 'sun',
+                name: '💵 U.S. Dollar Index (DXY)',
+                category: 'Central Sun (Global Reserve)',
+                color: 0xfacc15,
+                size: 2.2,
+                distance: 0,
+                speed: 0,
+                details: '<b>U.S. Dollar Liquidity:</b><br>• Serves as the core anchor of global finance.<br>• High Fed rates attract capital, strengthening DXY.<br>• Impacts cross-border debt and global liquidity.'
+            },
+            {
+                id: 'crypto',
+                name: '₿ Crypto Market (Bitcoin & Assets)',
+                category: 'High-Beta Planet',
+                color: 0xf97316,
+                size: 0.9,
+                distance: 5,
+                speed: 0.015,
+                details: '<b>Crypto Assets:</b><br>• Inverse correlation with DXY strength.<br>• Driven by global institutional adoption & spot ETFs.'
+            },
+            {
+                id: 'stocks',
+                name: '📈 Global Equities (S&P 500 / VOO)',
+                category: 'Core Equity Planet',
+                color: 0x38bdf8,
+                size: 1.1,
+                distance: 8,
+                speed: 0.01,
+                details: '<b>S&P 500 & VOO ETF:</b><br>• Represents top 500 U.S. corporations.<br>• Highly sensitive to Fed interest rate trajectories.'
+            },
+            {
+                id: 'oil',
+                name: '🛢️ Energy & Commodities (Oil WTI)',
+                category: 'Commodity Planet',
+                color: 0xef4444,
+                size: 1.0,
+                distance: 11,
+                speed: 0.007,
+                details: '<b>Crude Oil & Inflation:</b><br>• Priced in USD globally.<br>• Geopolitics and OPEC+ quotas control supply dynamics.'
+            },
+            {
+                id: 'macro',
+                name: '🏛️ Fed Rates & Treasury Yields',
+                category: 'Outer Anchor',
+                color: 0x10b981,
+                size: 0.8,
+                distance: 14,
+                speed: 0.004,
+                details: '<b>Macro Policy:</b><br>• U.S. 10Y Treasury Yield sets risk-free return benchmark.<br>• Direct driver for global capital reallocation.'
+            }
+        ];
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 14, 24);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.PointLight(0xfff5cc, 2.5, 60);
+        scene.add(sunLight);
+
+        // Starfield
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 2000;
+        const starPos = new Float32Array(starsCount * 3);
+        for(let i=0; i<starsCount*3; i++) {
+            starPos[i] = (Math.random() - 0.5) * 250;
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starsMaterial = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.6, transparent: true, opacity: 0.8 });
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+
+        const planets = [];
+
+        marketData.forEach(data => {
+            if (data.distance > 0) {
+                const ringGeo = new THREE.RingGeometry(data.distance - 0.04, data.distance + 0.04, 64);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.2 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                scene.add(ring);
+            }
+
+            const geo = new THREE.SphereGeometry(data.size, 32, 32);
+            let mat;
+            if (data.distance === 0) {
+                mat = new THREE.MeshBasicMaterial({ color: data.color });
+            } else {
+                mat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.3, metalness: 0.4 });
+            }
+
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.userData = { ...data, angle: Math.random() * Math.PI * 2 };
+            scene.add(mesh);
+            planets.push(mesh);
+        });
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            if (document.getElementById('modal').style.display === 'block') return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(planets);
+
+            if (intersects.length > 0) {
+                const selectedData = intersects[0].object.userData;
+                openModal(selectedData);
+            }
+        });
+
+        function openModal(data) {
+            const modal = document.getElementById('modal');
+            const cat = document.getElementById('modal-category');
+            cat.innerText = data.category;
+            cat.style.background = '#' + data.color.toString(16);
+            cat.style.color = data.color === 0xfacc15 ? '#000' : '#fff';
+            
+            document.getElementById('modal-title').innerText = data.name;
+            document.getElementById('modal-content').innerHTML = data.details;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            planets.forEach(planet => {
+                const data = planet.userData;
+                planet.rotation.y += 0.01;
+
+                if (data.distance > 0) {
+                    data.angle += data.speed;
+                    planet.position.x = Math.cos(data.angle) * data.distance;
+                    planet.position.z = Math.sin(data.angle) * data.distance;
+                }
+            });
+
+            starField.rotation.y += 0.0003;
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+
+    <!-- Real-Time Stock Data Fetcher (Finnhub API Key Integrated) -->
+    <script>
+        const API_KEY = 'db0acu1r01qn6m004nd0db0acu1r01qn6m004ndg';
+
+        const stocks = [
+            { symbol: 'VOO', priceId: 'voo-price', changeId: 'voo-change' },
+            { symbol: 'NVDA', priceId: 'nvda-price', changeId: 'nvda-change' },
+            { symbol: 'AAPL', priceId: 'aapl-price', changeId: 'aapl-change' },
+            { symbol: 'MSFT', priceId: 'msft-price', changeId: 'msft-change' }
+        ];
+
+        async function fetchStockPrices() {
+            for (const stock of stocks) {
+                try {
+                    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${stock.symbol}&token=${API_KEY}`);
+                    const data = await res.json();
+                    
+                    if (data && data.c !== undefined && data.c !== 0) {
+                        const priceElement = document.getElementById(stock.priceId);
+                        const changeElement = document.getElementById(stock.changeId);
+                        
+                        priceElement.innerText = `$${data.c.toFixed(2)}`;
+                        
+                        const changeVal = data.d ? data.d : 0;
+                        const changePercent = data.dp ? data.dp.toFixed(2) : '0.00';
+                        
+                        if (changeVal >= 0) {
+                            changeElement.innerText = `+${changeVal.toFixed(2)} (+${changePercent}%)`;
+                            changeElement.className = 'stock-change up';
+                        } else {
+                            changeElement.innerText = `${changeVal.toFixed(2)} (${changePercent}%)`;
+                            changeElement.className = 'stock-change down';
+                        }
+                    } else {
+                        document.getElementById(stock.priceId).innerText = "No Data";
+                    }
+                } catch (e) {
+                    console.error("Error fetching data for " + stock.symbol, e);
+                    document.getElementById(stock.priceId).innerText = "Error";
+                }
+            }
+        }
+
+        // Fetch immediately on load
+        fetchStockPrices();
+
+        // Auto-refresh every 10 seconds
+        setInterval(fetchStockPrices, 10000);
+    </script>
+</body>
+</html>
