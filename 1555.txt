@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Macro Economy Solar System</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #030308;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+        }
+        #info-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.75);
+            padding: 15px 25px;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+        #info-overlay h1 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+            color: #38bdf8;
+        }
+        #info-overlay p {
+            margin: 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        #modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 500px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #38bdf8;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(12px);
+            z-index: 100;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -45%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        #modal h2 {
+            margin-top: 0;
+            color: #f8fafc;
+            font-size: 22px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+        #modal .category {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        #modal p {
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        #modal .close-btn {
+            margin-top: 15px;
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+            transition: 0.2s;
+        }
+        #modal .close-btn:hover {
+            background: #7dd3fc;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="info-overlay">
+        <h1>🌌 Macro Economic Orbit</h1>
+        <p>คลิกที่ดาวเคราะห์เพื่ออ่านวิเคราะห์ปัจจัยเศรษฐกิจและทิศทางตลาด</p>
+    </div>
+
+    <div id="modal">
+        <span id="modal-category" class="category"></span>
+        <h2 id="modal-title">Title</h2>
+        <p id="modal-content">Detail text goes here...</p>
+        <button class="close-btn" onclick="closeModal()">ปิดหน้าต่าง</button>
+    </div>
+
+    <script>
+        const marketData = [
+            {
+                id: 'sun',
+                name: '💵 U.S. Dollar Index (DXY)',
+                category: 'ดวงอาทิตย์ (ความต้องการดอลลาร์)',
+                color: 0xfacc15,
+                size: 2.2,
+                distance: 0,
+                speed: 0,
+                details: '<b>ความต้องการดอลลาร์สหรัฐ (US Dollar Needs):</b><br>• <b> Safe-Haven Status:</b> ในยามสภาวะสงครามหรือวิกฤตเศรษฐกิจ นโยบายตรึงดอกเบี้ยสูงของ Fed ทำให้เงินทุนไหลเข้าดอลลาร์<br>• <b> Petrodollar & Global Reserve:</b> ดอลลาร์เป็นสกุลเงินหลักที่ใช้ชำระหนี้ข้ามชาติและซื้อขายสินค้าโภคภัณฑ์<br>• <b> Fed Policy:</b> การปรับขึ้น/ลงอัตราดอกเบี้ยส่งผลกระทบต่อต้นทุนการเงินทั่วโลกโดยตรง'
+            },
+            {
+                id: 'crypto',
+                name: '₿ Crypto Market (Bitcoin/Altcoins)',
+                category: 'ราคาคริปโต',
+                color: 0xf97316,
+                size: 0.9,
+                distance: 5,
+                speed: 0.015,
+                details: '<b>ความสัมพันธ์กับดอลลาร์ & ข่าวคริปโต:</b><br>• <b> Inverse Correlation:</b> โดยทั่วไปเมื่อ DXY แข็งค่า คริปโตมักจะปรับตัวลงเนื่องจาก liquidity ตึงตัว<br>• <b> Institutional Adoption:</b> การเข้ามาของ Spot Bitcoin ETFs ช่วยลดความเสี่ยงจากมหภาค ทำให้บางช่วงราคาเคลื่อนไหวสอดคล้องกับสินทรัพย์เสี่ยงอื่นๆ<br>• <b> Hedging:</b> คริปโตยังคงถูกมองว่าเป็นสินทรัพย์ทางเลือกในการป้องกันเงินเฟ้อระยะยาว'
+            },
+            {
+                id: 'stocks',
+                name: '📈 Global Stock Index (S&P500 / Tech)',
+                category: 'ราคาหุ้น',
+                color: 0x3b82f6,
+                size: 1.1,
+                distance: 8,
+                speed: 0.01,
+                details: '<b>ผลกระทบต่อราคาหุ้น:</b><br>• <b> Strong Dollar Impact:</b> ดอลลาร์ที่แข็งค่าเกินไปทำให้ผลกำไรของบริษัทข้ามชาติในสหรัฐฯ ลดลงเมื่อแปลงกลับเป็นดอลลาร์<br>• <b> Risk-On Sentiment:</b> หุ้นเทคโนโลยีและหุ้นเติบโตสูง (Growth Stocks) อ่อนไหวต่ออัตราดอกเบี้ยสหรัฐฯ อย่างมาก หาก Fed ลดดอกเบี้ย หุ้นกลุ่มนี้จะปรับตัวขึ้นแรง'
+            },
+            {
+                id: 'oil',
+                name: '🛢️ Crude Oil (WTI / Brent)',
+                category: 'ราคาน้ำมัน',
+                color: 0xef4444,
+                size: 1.0,
+                distance: 11,
+                speed: 0.007,
+                details: '<b>ปัจจัยและโครงสร้างราคาน้ำมัน:</b><br>• <b> Dollar Pricing:</b> น้ำมันซื้อขายด้วยดอลลาร์ หากดอลลาร์แข็งขึ้น ประเทศอื่นจะซื้อน้ำมันแพงขึ้น ชะลอความต้องการซื้อ<br>• <b> Shale Revolution:</b> สหรัฐฯ กลายเป็นผู้ส่งออกพลังงานสุทธิ ทำให้ความเชื่อมโยงแบบตรงระหว่าง DXY กับน้ำมันเริ่มเปลี่ยนไป<br>• <b> Geopolitics & OPEC+:</b> ความเสี่ยงด้านสงครามและการคุมกำลังการผลิตยังคงเป็นปัจจัยหลักในการดันราคาน้ำมัน'
+            },
+            {
+                id: 'macro',
+                name: '🏛️ Fed Rate & Inflation Factor',
+                category: 'ปัจจัยมหภาคส่งผลต่อดอลลาร์',
+                color: 0x10b981,
+                size: 0.8,
+                distance: 14,
+                speed: 0.004,
+                details: '<b>ปัจจัยหลักที่กำหนดทิศทางดอลลาร์:</b><br>• <b> Inflation (CPI/PCE):</b> เงินเฟ้อที่ทรงตัวสูงบังคับให้ Fed ต้องคงดอกเบี้ยสูง หนุนดอลลาร์แข็งค่า<br>• <b> Treasury Yields:</b> ผลตอบแทนพันธบัตรรัฐบาลสหรัฐฯ อายุ 10 ปี เป็นตัวดึงดูดเงินทุนต่างชาติเข้าสู่ดอลลาร์<br>• <b> Labor Market:</b> ตัวเลขการจ้างงาน (Non-Farm Payrolls) เป็นตัวชี้วัดสำคัญของสุขภาพเศรษฐกิจสหรัฐฯ'
+            }
+        ];
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 12, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.PointLight(0xfff5cc, 2, 50);
+        scene.add(sunLight);
+
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 1500;
+        const starPos = new Float32Array(starsCount * 3);
+        for(let i=0; i<starsCount*3; i++) {
+            starPos[i] = (Math.random() - 0.5) * 200;
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 });
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+
+        const planets = [];
+
+        marketData.forEach(data => {
+            if (data.distance > 0) {
+                const ringGeo = new THREE.RingGeometry(data.distance - 0.03, data.distance + 0.03, 64);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.15 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                scene.add(ring);
+            }
+
+            const geo = new THREE.SphereGeometry(data.size, 32, 32);
+            let mat;
+            if (data.distance === 0) {
+                mat = new THREE.MeshBasicMaterial({ color: data.color });
+            } else {
+                mat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.4, metalness: 0.3 });
+            }
+
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.userData = { ...data, angle: Math.random() * Math.PI * 2 };
+            scene.add(mesh);
+            planets.push(mesh);
+        });
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            if (document.getElementById('modal').style.display === 'block') return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(planets);
+
+            if (intersects.length > 0) {
+                const selectedData = intersects[0].object.userData;
+                openModal(selectedData);
+            }
+        });
+
+        function openModal(data) {
+            const modal = document.getElementById('modal');
+            const cat = document.getElementById('modal-category');
+            cat.innerText = data.category;
+            cat.style.background = '#' + data.color.toString(16);
+            cat.style.color = data.color === 0xfacc15 ? '#000' : '#fff';
+            
+            document.getElementById('modal-title').innerText = data.name;
+            document.getElementById('modal-content').innerHTML = data.details;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            planets.forEach(planet => {
+                const data = planet.userData;
+                planet.rotation.y += 0.01;
+
+                if (data.distance > 0) {
+                    data.angle += data.speed;
+                    planet.position.x = Math.cos(data.angle) * data.distance;
+                    planet.position.z = Math.sin(data.angle) * data.distance;
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
